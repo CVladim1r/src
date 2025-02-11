@@ -1,0 +1,28 @@
+global_frame: map
+static_map: false
+rolling_window: true
+
+footprint_padding: 0.01
+
+width: 8
+height: 8
+origin_x: -4
+origin_y: -4
+
+# resolution: 0.1 # 0.05
+
+inflation:
+  inflation_radius: 0.2
+  cost_scaling_factor: 0.0
+  inflate_unknown: true
+
+obstacles_laser:
+  obstacle_range: 4.5
+  raytrace_range: 5.0
+
+plugins:
+  - {name: obstacles_laser,           type: "costmap_2d::ObstacleLayer"}
+  # - {name: range_sensor_layer,        type: "range_sensor_layer::RangeSensorLayer"}
+  - {name: voxel_layer,               type: "costmap_2d::VoxelLayer"}
+  - {name: inflation,                 type: "costmap_2d::InflationLayer"}
+

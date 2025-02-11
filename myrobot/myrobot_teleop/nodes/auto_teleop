@@ -1,0 +1,151 @@
+#!/usr/bin/env python
+import rospy, math
+from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Range, LaserScan
+
+MYROBOT_MAX_LIN_VEL = 0.6
+MYROBOT_MAX_ANG_VEL = 2
+MYROBOT_SPEED = 1
+SEGMENTS = 24
+
+def lerp(a, b, coeff):
+    return float(a) + float(b-a) * float(coeff)
+
+class KeyboardTeleop:    
+    def __init__(self):
+        rospy.init_node('keyboard_teleop')
+        # import pika
+        # queue_name = 'test_queue'
+        # exchange_name = ''
+        # routing_key = gueue_name 
+        # message = ''
+        # connection = pika.BlockingConnection(pika.ConnectionParameters(host='Localhost'))
+        # channel = connection.channel()
+        # channel.queue_declare(queue=queue_name)
+        # channel.basic_publish(exchange=exchange_name, routing_key=routing_key, body=message)
+        # print(f" [x] Sent '{message}'")
+
+        # создание publisher-ов и вспомогательных переменных
+
+        self.pub = rospy.Publisher("/controller/cmd_vel", Twist, queue_size=10)
+        self.lidar = rospy.Subscriber("/my_robot/rplidar/scan", LaserScan, self.onLaserSensor)
+        self.sendor_front_left = rospy.Subscriber("/my_robot/sensor/left", Range, self.onIRSensor0)
+        self.sendor_front_center = rospy.Subscriber("/my_robot/sensor/center", Range, self.onIRSensor1)
+        self.sendor_front_right = rospy.Subscriber("/my_robot/sensor/right", Range, self.onIRSensor2)
+
+        self.distances = []
+        self.dist_front_0 = 0.0
+        self.dist_front_1 = 0.0
+        self.dist_front_2 = 0.0
+
+        for i in range(SEGMENTS):
+            self.distances.append(0)
+
+
+        self.target_linear_vel   = 0.0
+        self.target_angular_vel  = 0.0
+        
+    def run(self):
+        rate = rospy.Rate(10)
+        try:
+            while not rospy.is_shutdown():
+                self.update_velocity()
+                rate.sleep()
+        except rospy.ROSInterruptException:
+            pass 
+
+    def onIRSensor0(self, msg):
+        # import numpy as np 
+        # def min_max_normalization(data):
+        #     data = np.array(data)
+        #     min_value = np.min(data)
+        #     max_value = np.max(data)
+        #     normalized_data = (data - min_value) / (max_value - min_value)
+        #     return normalized_data
+        #     sensor_data = [10, 15, 20, 25, 30]
+        #     normalized_sensor_data = min_max_normalization(sens or_data)
+        #     print()
+        #нормализация значения датчика
+
+        self.dist_front_0 = msg.range / msg.max_range
+
+    def onIRSensor1(self, msg):
+
+        self.dist_front_1 = msg.range / msg.max_range
+
+    def onIRSensor2(self, msg):
+
+        self.dist_front_2 = msg.range / msg.max_range
+
+    def onLaserSensor(self, msg):
+        for i in range(SEGMENTS):
+            self.distances[i] = 9999
+
+        angle = msg.angle_min
+        for r in msg.ranges:
+            if math.isinf(r):
+                r = 12
+
+            a = angle * 180 / math.pi
+            idx = int(a / (360 / SEGMENTS)) % SEGMENTS
+            # print(repr(idx) + ' of ' + repr(a) + ' with dist= ' + repr(r))
+            self.distances[idx] = min(self.distances[idx], r)
+            angle = angle + msg.angle_increment
+
+    def update_velocity(self):
+        print(f'case 0: {self.dist_front_1} {self.dist_front_0} {self.dist_front_2}')
+        # print('distances: ' + repr(self.distances))
+
+        #self.target_linear_vel = 0
+        #self.target_angular_vel = 0
+
+        if self.dist_front_1 < 0.8:
+            print('case 1: ' + repr(self.dist_front_1))
+            #обработка приближения по датчику
+            self.target_angular_vel = MYROBOT_MAX_ANG_VEL
+
+            # class MYROBOT_MAX_LIN_VEL:
+            #     def __int__(self):
+            #         self.dist_front_1 = 1.0
+            #         self.MYROBOT_MAX_LIN_VEL = 0.5
+            #     def update_distance(self, new_distance):
+            #         self.dist_front_1 = new_distance
+            #     def control_behavior(self):
+            #         if self.dist_front_1 < 0.8
+            #             self.set_velocity(0)
+            #             print("")
+            #         else: 
+            #             self.set_velocity(self.MYROBOT_MAX_ANG_VEL)
+            #             print("")
+            #     def set_velocity(self, velocity):
+            #         print(f" to:{}")
+            #         robot = MYROBOT_MAX_ANG_VEL
+            #         robot.update_distance(0.7)
+            #         robot.control_behavior()
+
+                        
+        elif self.dist_front_0 < 0.8:
+            print('case 2: ' + repr(self.dist_front_0))
+            self.target_angular_vel = -MYROBOT_MAX_ANG_VEL
+            #обработка приближения по датчику
+
+        elif self.dist_front_2 < 0.8:
+            print('case 3: ' + repr(self.dist_front_2))
+            self.target_angular_vel = MYROBOT_MAX_ANG_VEL
+
+            #обработка приближения по датчику
+        else:
+            pass
+            # Место для кода обработки датчиков дистанции и лидара. Здесь задаются линейное и угловое ускорение в зависимости от данных датчиков дистанции и лидара
+
+
+        twist = Twist()
+        twist.linear.x = 0.0; twist.linear.y = 0.0; twist.linear.z = 0.0 # Тут не все значения должны быть равны нулю
+        twist.angular.x = 0.0; twist.angular.y = 0.0; twist.angular.z = 0.0 # Тут не все значения должны быть равны нулю
+        self.target_linear_vel = 0.0
+        self.target_angular_vel = 0.0
+        self.pub.publish(twist)
+
+if __name__=="__main__":
+    teleop = KeyboardTeleop()
+    teleop.run()

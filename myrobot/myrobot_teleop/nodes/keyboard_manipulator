@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+import rospy
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from std_msgs.msg import Header
+from pynput.keyboard import Key, KeyCode, Listener
+
+MYROBOT_MAX_JOINT_VEL = 0.1
+
+class KeyboardManipulator:    
+    def __init__(self):
+        rospy.init_node('keyboard_manipulator')
+
+        #создание publisher и вспомогательных переменных
+
+    def run(self):
+        self.keyboard_listener = Listener(on_press=self.on_key_press, on_release=self.on_key_release)
+        self.keyboard_listener.start()
+        rate = rospy.Rate(10)
+        try:
+            while not rospy.is_shutdown():
+                self.update_key_state()
+                rate.sleep()
+        except rospy.ROSInterruptException:
+            pass
+        self.keyboard_listener.stop()
+        self.keyboard_listener.join()    
+
+    def update_key_state(self):
+
+        jointPositions = JointTrajectory()
+        jointPositions.header = Header()
+        jointPositions.header.stamp = rospy.Time.now()
+        jointPositions.joint_names = []
+        point=JointTrajectoryPoint()
+        point.positions = [0.0,     #не все значения равны 0
+                            0.0,
+                            0.0,
+                            0.0, 
+                            0.0]
+        point.time_from_start = rospy.Duration(2)
+        jointPositions.points.append(point)
+        self.pub.publish(jointPositions)
+
+    def on_key_press(self, key):
+        #обработка нажатия клавиши
+
+        self.update_key_state()
+        return True
+
+    def on_key_release(self, key):
+
+        #обработка отпускания клавиши
+
+        if key == Key.esc:
+            return False
+        
+        self.update_key_state()
+        return True
+
+if __name__=="__main__":
+    teleop = KeyboardManipulator()
+    teleop.run()

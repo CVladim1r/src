@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+import rospy
+from geometry_msgs.msg import Twist
+from pynput.keyboard import Key, KeyCode, Listener
+# import keyboard
+
+MYROBOT_MAX_LIN_VEL = 1
+MYROBOT_MAX_ANG_VEL = 2
+
+class KeyboardTeleop:
+    def __init__(self):
+        rospy.init_node('keyboard_teleop')
+
+        self.pub = rospy.Publisher("/controller/cmd_vel", Twist, queue_size=10)                                
+        self.lin_vel_key = 0
+        self.ang_vel_key = 0
+                    
+    #создание publisher и вспомогательных переменных
+    
+        self.keyboard_listener = None
+        
+    def run(self):
+        self.keyboard_listener = Listener(on_press=self.on_key_press, on_release=self.on_key_release)
+        self.keyboard_listener.start()
+        rate = rospy.Rate(10)
+        try:
+            while not rospy.is_shutdown():
+                self.update_key_state()
+                rate.sleep()
+        except rospy.ROSInterruptException:
+            pass
+        self.keyboard_listener.stop()                                                                                                                                                     
+        self.keyboard_listener.join()
+
+          
+
+    def update_key_state(self):
+
+        # def on_key_event(event):
+        #     if event.event_type == keyboard.KEY_DOWN:
+        #         print(f'')
+        #     elif event.event_type == keyboard.KEY_UP:
+        #         print(f'')
+        #         keyboard.hook(on_key_event)
+        #         keyboard.wait('esc')
+
+            #обновление нажатия клавиш
+
+        twist = Twist()
+        twist.linear.x = MYROBOT_MAX_LIN_VEL * self.lin_vel_key; twist.linear.y = 0.0; twist.linear.z = 0.0
+        twist.angular.x = 0.0; twist.angular.y = 0.0; twist.angular.z = MYROBOT_MAX_ANG_VEL * self.ang_vel_key
+        self.pub.publish(twist)
+
+
+    def on_key_press(self, key):
+
+        # def on_key_event(event):
+        #     if event.event_type == keyboard.KEY_DOWN:
+        #         print(f'')
+        #     elif event.event_type == keyboard.KEY_UP:
+        #         print(f'')
+        #         keyboard.hook(on_key_event)
+        #         keyboard.wait('esc')
+
+        if key==KeyCode.from_char("w"):
+            self.lin_vel_key = 1
+        elif key==KeyCode.from_char("s"):
+            self.lin_vel_key = -1
+        if key==KeyCode.from_char("a"):
+            self.ang_vel_key = 1
+        elif key==KeyCode.from_char("d"):
+            self.ang_vel_key = -1
+
+        self.update_key_state()
+        return True
+
+    def on_key_release(self, key):
+
+        # def on_key_release(event):
+        #         print(f" {event.name}")
+        # keyboard.on_release(on_key_release)
+        # keyboard.wait('esc')
+
+            #обработка отжатия клавиши
+        if key==KeyCode.from_char("w") and self.lin_vel_key != 0:
+            self.lin_vel_key = 0
+        elif key==KeyCode.from_char("s") and self.lin_vel_key != 0:
+            self.lin_vel_key = 0
+        if key==KeyCode.from_char("a") and self.ang_vel_key != 0:
+            self.ang_vel_key = 0
+        elif key==KeyCode.from_char("d") and self.ang_vel_key != 0:
+            self.ang_vel_key = 0
+        self.update_key_state()
+        return True
+
+if __name__=="__main__":
+    teleop = KeyboardTeleop()
+    teleop.run()

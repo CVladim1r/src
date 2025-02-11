@@ -1,0 +1,31 @@
+footprint: [[0.2, 0.1], [-0.2, 0.1], [-0.2, -0.1], [0.2, -0.1]]
+# footprint_padding: 0.1
+
+robot_base_frame: world_link
+update_frequency: 5.0
+publish_frequency: 5.0
+transform_tolerance: 0.5
+
+resolution: 0.05
+
+obstacles_laser:
+  observation_sources: laser
+  laser: {
+    topic: /myrobot/rplidar/scan,
+    data_type: LaserScan,
+    clearing: true, 
+    marking: true, 
+    inf_is_valid: true
+  }
+
+voxel_layer:
+  observation_sources: octomap_voxel_grid
+  octomap_voxel_grid: {
+    topic: /octomap_point_cloud_centers,
+    data_type: PointCloud2,
+    clearing: true, 
+    marking: true, 
+    inf_is_valid: true,
+    max_obstacle_height: 0.5,
+    min_obstacle_height: -0.1 #test
+  }

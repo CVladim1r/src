@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="base_global_planner" default="global_planner/GlobalPlanner"/>
+  <arg name="base_local_planner" default="teb_local_planner/TebLocalPlannerROS"/>
+  <arg name="move_base_config" default="move_base_params_host.yaml"/>
+
+  <!-- launch-prefix="$(find evarobot_navigation)/scripts/global_loc" -->
+
+  <!--- Run Move Base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" >
+    <param name="base_global_planner" value="$(arg base_global_planner)"/>
+    <param name="base_local_planner" value="$(arg base_local_planner)"/>
+
+    <rosparam file="$(find myrobot_navigation)/config/$(arg move_base_config)" command="load"/>
+
+    <rosparam file="$(find myrobot_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find myrobot_navigation)/config/local_costmap_params.yaml"  command="load" ns="local_costmap" />
+<!--    <param name="local_costmap/width" value="3.0"/>-->
+<!--    <param name="local_costmap/height" value="3.0"/>-->
+
+    <rosparam file="$(find myrobot_navigation)/config/costmap_common_params.yaml"       command="load" ns="global_costmap" />
+    <rosparam file="$(find myrobot_navigation)/config/global_costmap_params_laser.yaml" command="load" ns="global_costmap"/>
+
+    <remap from="cmd_vel" to="/controller/cmd_vel"/>
+  </node>
+
+</launch>

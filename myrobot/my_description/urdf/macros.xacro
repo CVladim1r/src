@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+<!-- wheel macros -->
+  <xacro:macro name ="wheel_macro" params = "parent_link wheel_prefix wheel_side width radius mass *joint_origin">
+      <link name = "${wheel_prefix}_wheel_link">
+          <visual>
+              <geometry>
+                  <mesh filename="package://my_description/meshes/tire.dae" scale="${radius} ${radius} ${width/2}"/> <!-- ? -->
+              </geometry>
+              <origin rpy="${wheel_side * PI/2} 0 0" xyz="0 0 0"/> <!-- ? -->
+          </visual>
+
+          <collision>
+              <geometry>
+                  <cylinder length="${width}" radius="${radius}"/>
+              </geometry>
+              <origin rpy="${PI/2} 0 0" xyz="0 0 0"/>
+          </collision>
+
+          <xacro:inertial_cylinder mass ="${mass}" length = "${width}" radius = "${radius}">
+            <origin rpy="${PI/2} 0 0" xyz="0 0 0"/>
+          </xacro:inertial_cylinder>
+      </link>
+
+      <joint name = "${wheel_prefix}_wheel_joint" type="continuous">
+          <parent link = "${parent_link}"/>
+          <child link = "${wheel_prefix}_wheel_link"/>
+          <xacro:insert_block name = "joint_origin"/>
+          <axis rpy="0 0 0" xyz="0 1 0"/> <!-- двигаться вокруг оси а не в ее направлении -->
+      </joint>
+
+    <!-- https://answers.ros.org/question/27502/gazebo-and-transmissions-mechanicalreduction-and-motortorqueconstant/
+         http://wiki.ros.org/urdf/XML/Transmission -->
+    <transmission name="${wheel_prefix}_wheel_transmission" type="SimpleTransmission">
+        <type> transmission_interface/SimpleTransmission</type>
+        <actuator name = "${wheel_prefix}_wheel_actuator">
+          <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        <joint name="${wheel_prefix}_wheel_joint">
+          <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+    </transmission>
+  </xacro:macro>
+<!-- ir_sensor macros -->
+
+  <xacro:macro name="ir_sensor" params="name parent sx sy sz *origin">
+    <link name="ir_sensor_${name}">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/> 
+        <geometry>
+          <box size="${sx} ${sy} ${sz}"/>
+        </geometry>
+        <material name="green"/>
+      </visual>
+    </link>
+    <joint name="ir_sensor_${name}_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="ir_sensor_${name}"/>
+      <xacro:insert_block name="origin"/>
+    </joint>
+  </xacro:macro>
+
+</robot>

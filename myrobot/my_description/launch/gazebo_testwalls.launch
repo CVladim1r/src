@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="gui" default="false"/>
+
+  <include file="$(find my_description)/launch/gazebo.launch">
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="world_name" value="$(find my_description)/worlds/test_walls.world"/>
+  </include>
+
+  <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-urdf -model my_robot -param robot_description -x -1.45 -y -1.5 -z 2.719 -R 0 -P 0 -Y -0"/>
+
+</launch>

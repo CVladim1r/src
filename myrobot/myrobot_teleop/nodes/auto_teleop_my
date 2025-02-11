@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+import rospy, math
+from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Range, LaserScan
+
+MYROBOT_MAX_LIN_VEL = 0.6
+MYROBOT_MAX_ANG_VEL = 2
+MYROBOT_SPEED = 1
+SEGMENTS = 24
+
+def lerp(a, b, coeff):
+    return float(a) + float(b-a) * float(coeff)
+
+class KeyboardTeleop:    
+    def __init__(self):
+        rospy.init_node('keyboard_teleop')
+
+        # создание publisher-ов и вспомогательных переменных
+        for i in range(SEGMENTS):
+            self.distances.append(0)
+
+
+        self.target_linear_vel   = 0.0
+        self.target_angular_vel  = 0.0
+        
+    def run(self):
+        rate = rospy.Rate(10)
+        try:
+            while not rospy.is_shutdown():
+                self.update_velocity()
+                rate.sleep()
+        except rospy.ROSInterruptException:
+            pass 
+
+    def onIRSensor0(self, msg):
+        #нормализация значения датчика
+    def onIRSensor1(self, msg):
+        #нормализация значения датчика
+    def onIRSensor2(self, msg):
+        #нормализация значения датчика
+    def onLaserSensor(self, msg):
+        for i in range(SEGMENTS):
+            self.distances[i] = 9999
+
+        angle = msg.angle_min
+        for r in msg.ranges:
+            if math.isinf(r):
+                r = 12
+
+            a = angle * 180 / math.pi
+            idx = int(a / (360 / SEGMENTS)) % SEGMENTS
+            # print(repr(idx) + ' of ' + repr(a) + ' with dist= ' + repr(r))
+            self.distances[idx] = min(self.distances[idx], r)
+            angle = angle + msg.angle_increment
+
+    def update_velocity(self):
+        # print('distances: ' + repr(self.distances))
+
+        #self.target_linear_vel = 0
+        #self.target_angular_vel = 0
+
+        if self.dist_front_1 < 0.8:
+            #обработка приближения по датчику
+        elif self.dist_front_0 < 0.8:
+            print('case 2: ' + repr(self.dist_front_0))
+            #обработка приближения по датчику
+        elif self.dist_front_2 < 0.8:
+            print('case 3: ' + repr(self.dist_front_2))
+            #обработка приближения по датчику
+        else:
+            # Место для кода обработки датчиков дистанции и лидара. Здесь задаются линейное и угловое ускорение в зависимости от данных датчиков дистанции и лидара
+
+
+        twist = Twist()
+        twist.linear.x = 0.0; twist.linear.y = 0.0; twist.linear.z = 0.0 # Тут не все значения должны быть равны нулю
+        twist.angular.x = 0.0; twist.angular.y = 0.0; twist.angular.z = 0.0 # Тут не все значения должны быть равны нулю
+        self.target_linear_vel = 0.0
+        self.target_angular_vel = 0.0
+        self.pub.publish(twist)
+
+if __name__=="__main__":
+    teleop = KeyboardTeleop()
+    teleop.run()
